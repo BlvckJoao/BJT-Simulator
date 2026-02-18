@@ -1,0 +1,2 @@
+rootProject.name = "Circuit-Simulator"
+include ':app'
