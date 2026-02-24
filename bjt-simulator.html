@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BJT Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111520;
+    --card: #161b27;
+    --border: #1e2a3a;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff6b;
+    --text: #c8d8e8;
+    --muted: #4a6070;
+    --glow: 0 0 20px rgba(0,229,255,0.3);
+    --glow2: 0 0 20px rgba(255,107,53,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: 0 0 80px;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(180deg, rgba(0,229,255,0.08) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(0,229,255,0.2);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+
+  .logo-chip {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: #000;
+    font-weight: 700;
+    letter-spacing: -1px;
+    box-shadow: var(--glow);
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    margin-left: 48px;
+  }
+
+  /* Sections */
+  section {
+    padding: 20px 16px 0;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* Circuit Diagram */
+  .circuit-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .circuit-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Input grid */
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .input-full {
+    grid-column: 1 / -1;
+  }
+
+  .input-group {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-group::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .input-group:focus-within {
+    border-color: rgba(0,229,255,0.4);
+    box-shadow: 0 0 12px rgba(0,229,255,0.1);
+  }
+
+  .input-group:focus-within::before { opacity: 1; }
+
+  .input-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .input-unit {
+    color: var(--accent);
+    font-size: 9px;
+  }
+
+  .input-field {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    caret-color: var(--accent);
+  }
+
+  .input-field::placeholder { color: var(--muted); font-size: 16px; }
+
+  /* Slider */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(0,229,255,0.6);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+
+  /* Calculate Button */
+  .btn-calculate {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent) 0%, #0099bb 100%);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin: 20px 16px 0;
+    width: calc(100% - 32px);
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 24px rgba(0,229,255,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-calculate::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  }
+
+  .btn-calculate:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 12px rgba(0,229,255,0.2);
+  }
+
+  /* Results */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 14px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  .result-card.active {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .result-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .result-card.ib::after { background: linear-gradient(90deg, var(--accent), transparent); }
+  .result-card.ic::after { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .result-card.vce::after { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .result-card.pt::after { background: linear-gradient(90deg, #bf7fff, transparent); }
+
+  .result-card.active.ib { border-color: rgba(0,229,255,0.3); }
+  .result-card.active.ic { border-color: rgba(255,107,53,0.3); }
+  .result-card.active.vce { border-color: rgba(127,255,107,0.3); }
+  .result-card.active.pt { border-color: rgba(191,127,255,0.3); }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .result-card.ib .result-label { color: var(--accent); }
+  .result-card.ic .result-label { color: var(--accent2); }
+  .result-card.vce .result-label { color: var(--accent3); }
+  .result-card.pt .result-label { color: #bf7fff; }
+
+  .result-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .result-unit {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Region badge */
+  .region-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.4s;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .region-card.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .region-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .region-dot.active { background: var(--accent3); color: var(--accent3); }
+  .region-dot.saturation { background: var(--accent2); color: var(--accent2); }
+  .region-dot.cutoff { background: var(--muted); color: var(--muted); }
+
+  .region-text {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .region-desc {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* Error */
+  .error-msg {
+    background: rgba(255,60,60,0.1);
+    border: 1px solid rgba(255,60,60,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #ff6b6b;
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* Formulas */
+  .formulas-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .formula-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+
+  .formula-row:last-child { border-bottom: none; }
+
+  .formula-name {
+    color: var(--accent);
+    min-width: 30px;
+  }
+
+  .formula-eq { color: var(--muted); }
+  .formula-expr { color: var(--text); flex: 1; }
+
+  /* Pulse animation */
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--accent3);
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* Number counter animation */
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-value.animate {
+    animation: countUp 0.3s ease-out;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="header-top">
+      <div class="logo-chip">BJT</div>
+      <h1>Simulator NPN</h1>
+    </div>
+    <div class="subtitle">Transistor Circuit Analyzer <span class="live-dot"></span></div>
+  </header>
+
+  <!-- Circuit Diagram -->
+  <section>
+    <div class="section-label">Circuito</div>
+    <div class="circuit-card">
+      <svg class="circuit-svg" viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg">
+        <!--
+          LAYOUT CORRIGIDO:
+          ─────────────────────────────────────────────────────
+          GND comum: y=220  (nivelado para ambas as malhas)
+
+          MALHA DA BASE (esquerda — menor/mais baixa):
+            VBB centralizada verticalmente entre y=120 e y=200
+            Topo VBB fio → sobe até y=100 → RB → base transistor (y=130)
+            Baixo VBB fio → desce até y=220 (GND)
+
+          MALHA DO COLETOR (direita — maior/mais alta):
+            VCC entre y=60 e y=160  (sobe mais que VBB)
+            Topo VCC fio → y=30 → RC (horizontal) → coletor transistor
+            Baixo VCC fio → desce até y=220 (GND)
+
+          TRANSISTOR NPN centrado em x=190, y=130
+          ─────────────────────────────────────────────────────
+        -->
+
+        <!-- ============ TRANSISTOR NPN ============ -->
+        <circle cx="190" cy="130" r="30" fill="rgba(0,229,255,0.03)" stroke="#1e2a3a" stroke-width="1.5"/>
+        <!-- Linha vertical interna -->
+        <line x1="182" y1="104" x2="182" y2="156" stroke="#c8d8e8" stroke-width="2.5"/>
+        <!-- Base saindo à esquerda -->
+        <line x1="160" y1="130" x2="182" y2="130" stroke="#c8d8e8" stroke-width="2.5"/>
+        <text x="156" y="134" font-family="Share Tech Mono" font-size="7" fill="#4a6070" text-anchor="end">B</text>
+        <!-- Coletor (diagonal sobe p/ direita) -->
+        <line x1="182" y1="112" x2="212" y2="92" stroke="#c8d8e8" stroke-width="2.5"/>
+        <text x="197" y="99" font-family="Share Tech Mono" font-size="7" fill="#4a6070">C</text>
+        <!-- Emissor (diagonal desce + seta NPN) -->
+        <line x1="182" y1="148" x2="212" y2="168" stroke="#c8d8e8" stroke-width="2.5"/>
+        <polygon points="204,161 213,167 207,174" fill="#c8d8e8"/>
+        <text x="197" y="168" font-family="Share Tech Mono" font-size="7" fill="#4a6070">E</text>
+
+        <!-- ============ MALHA DO COLETOR (direita — MAIOR, sobe até y=30) ============ -->
+        <!-- Coletor sobe até topo y=30 -->
+        <line x1="212" y1="92" x2="212" y2="30" stroke="#7fff6b" stroke-width="1.5"/>
+        <!-- RC horizontal no topo -->
+        <line x1="212" y1="30" x2="254" y2="30" stroke="#7fff6b" stroke-width="1.5"/>
+        <rect x="254" y="22" width="38" height="16" rx="3" fill="#111520" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="273" y="33" font-family="Share Tech Mono" font-size="8" fill="#ff6b35" text-anchor="middle">RC</text>
+        <line x1="292" y1="30" x2="314" y2="30" stroke="#7fff6b" stroke-width="1.5"/>
+        <!-- VCC desce do topo y=30 → corpo entre y=30 e y=145 → continua até GND y=220 -->
+        <!-- Fio topo da fonte VCC -->
+        <line x1="314" y1="30" x2="314" y2="68" stroke="#7fff6b" stroke-width="1.5"/>
+        <!-- Corpo VCC: y=68 a y=148  (80px de altura — fonte grande) -->
+        <rect x="300" y="68" width="28" height="80" rx="4" fill="#111520" stroke="#2a3a2a" stroke-width="1.5"/>
+        <!-- Símbolo bateria VCC -->
+        <line x1="307" y1="95" x2="321" y2="95" stroke="#7fff6b" stroke-width="2.2"/>
+        <line x1="310" y1="103" x2="318" y2="103" stroke="#7fff6b" stroke-width="1.3"/>
+        <line x1="307" y1="111" x2="321" y2="111" stroke="#7fff6b" stroke-width="2.2"/>
+        <line x1="310" y1="119" x2="318" y2="119" stroke="#7fff6b" stroke-width="1.3"/>
+        <text x="314" y="85" font-family="Share Tech Mono" font-size="7" fill="#4a6070" text-anchor="middle">VCC</text>
+        <text x="314" y="140" font-family="Share Tech Mono" font-size="9" fill="#7fff6b" text-anchor="middle">+</text>
+        <!-- Fio baixo VCC até GND -->
+        <line x1="314" y1="148" x2="314" y2="220" stroke="#7fff6b" stroke-width="1.5"/>
+        <!-- Emissor conecta ao trilho GND direito -->
+        <line x1="212" y1="168" x2="212" y2="220" stroke="#4a6070" stroke-width="1.5"/>
+        <!-- GND horizontal direito -->
+        <line x1="212" y1="220" x2="314" y2="220" stroke="#4a6070" stroke-width="1.5"/>
+        <!-- Label IC -->
+        <text x="222" y="24" font-family="Share Tech Mono" font-size="7.5" fill="#7fff6b">↓ IC</text>
+
+        <!-- ============ MALHA DA BASE (esquerda — MENOR) ============ -->
+        <!-- Fio esquerdo do RB até a coluna x=80 -->
+        <line x1="80" y1="130" x2="104" y2="130" stroke="#00e5ff" stroke-width="1.5"/>
+        <!-- RB horizontal no fio da base -->
+        <rect x="104" y="122" width="38" height="16" rx="3" fill="#111520" stroke="#ff6b35" stroke-width="1.5"/>
+        <text x="123" y="133" font-family="Share Tech Mono" font-size="8" fill="#ff6b35" text-anchor="middle">RB</text>
+        <!-- Fio direito do RB até a base do transistor -->
+        <line x1="142" y1="130" x2="160" y2="130" stroke="#00e5ff" stroke-width="1.5"/>
+        <!-- Fio vertical esquerdo desce diretamente até VBB em y=148 -->
+        <line x1="80" y1="130" x2="80" y2="148" stroke="#00e5ff" stroke-width="1.5"/>
+        <!-- VBB no meio do fio descendente: y=148 a y=202 -->
+        <rect x="66" y="148" width="28" height="54" rx="4" fill="#111520" stroke="#2a3a2a" stroke-width="1.5"/>
+        <line x1="73" y1="166" x2="87" y2="166" stroke="#00e5ff" stroke-width="2.2"/>
+        <line x1="76" y1="174" x2="84" y2="174" stroke="#00e5ff" stroke-width="1.3"/>
+        <text x="80" y="160" font-family="Share Tech Mono" font-size="7" fill="#4a6070" text-anchor="middle">VBB</text>
+        <text x="80" y="192" font-family="Share Tech Mono" font-size="9" fill="#00e5ff" text-anchor="middle">+</text>
+        <!-- Fio abaixo da VBB até GND -->
+        <line x1="80" y1="202" x2="80" y2="220" stroke="#00e5ff" stroke-width="1.5"/>
+        <!-- GND horizontal esquerdo até emissor -->
+        <line x1="80" y1="220" x2="212" y2="220" stroke="#4a6070" stroke-width="1.5"/>
+
+        <!-- ============ GND SYMBOL (centro) ============ -->
+        <line x1="146" y1="220" x2="146" y2="228" stroke="#4a6070" stroke-width="1.5"/>
+        <line x1="138" y1="228" x2="154" y2="228" stroke="#4a6070" stroke-width="1.5"/>
+        <line x1="141" y1="232" x2="151" y2="232" stroke="#4a6070" stroke-width="1"/>
+        <line x1="144" y1="236" x2="148" y2="236" stroke="#4a6070" stroke-width="0.7"/>
+
+        <!-- Label IB -->
+        <text x="118" y="124" font-family="Share Tech Mono" font-size="7.5" fill="#00e5ff" text-anchor="middle">IB →</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Inputs -->
+  <section>
+    <div class="section-label">Parâmetros de Entrada</div>
+    <div class="inputs-grid">
+      <div class="input-group">
+        <div class="input-label">VBB <span class="input-unit">Volts</span></div>
+        <input class="input-field" type="number" id="vbb" placeholder="5" step="0.1" inputmode="decimal">
+      </div>
+      <div class="input-group">
+        <div class="input-label">VCC <span class="input-unit">Volts</span></div>
+        <input class="input-field" type="number" id="vcc" placeholder="12" step="0.1" inputmode="decimal">
+      </div>
+      <div class="input-group">
+        <div class="input-label">RB <span class="input-unit">kΩ</span></div>
+        <input class="input-field" type="number" id="rb" placeholder="100" step="1" inputmode="decimal">
+      </div>
+      <div class="input-group">
+        <div class="input-label">RC <span class="input-unit">kΩ</span></div>
+        <input class="input-field" type="number" id="rc" placeholder="1" step="0.1" inputmode="decimal">
+      </div>
+      <div class="input-group input-full">
+        <div class="input-label">β (Beta / hFE) <span class="input-unit">adimensional</span></div>
+        <input class="input-field" type="number" id="beta" placeholder="100" step="1" inputmode="decimal">
+        <div class="slider-row">
+          <input type="range" id="beta-slider" min="10" max="500" value="100">
+          <span id="beta-display" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);min-width:32px">100</span>
+        </div>
+      </div>
+    </div>
+    <div class="error-msg" id="error-msg">⚠ Verifique os valores inseridos.</div>
+  </section>
+
+  <!-- Button -->
+  <button class="btn-calculate" onclick="calculate()">▶ CALCULAR</button>
+
+  <!-- Results -->
+  <section id="results-section" style="margin-top:20px">
+    <div class="section-label">Resultados</div>
+    <div class="results-grid">
+      <div class="result-card ib" id="card-ib">
+        <div class="result-label">Corrente Base</div>
+        <div class="result-value" id="val-ib">—</div>
+        <div class="result-unit" id="unit-ib">μA</div>
+      </div>
+      <div class="result-card ic" id="card-ic">
+        <div class="result-label">Corrente Coletor</div>
+        <div class="result-value" id="val-ic">—</div>
+        <div class="result-unit" id="unit-ic">mA</div>
+      </div>
+      <div class="result-card vce" id="card-vce">
+        <div class="result-label">Tensão VCE</div>
+        <div class="result-value" id="val-vce">—</div>
+        <div class="result-unit">V</div>
+      </div>
+      <div class="result-card pt" id="card-pt">
+        <div class="result-label">Potência Trans.</div>
+        <div class="result-value" id="val-pt">—</div>
+        <div class="result-unit" id="unit-pt">mW</div>
+      </div>
+    </div>
+
+    <div class="region-card" id="region-card">
+      <div class="region-dot" id="region-dot"></div>
+      <div>
+        <div class="region-text" id="region-text">—</div>
+        <div class="region-desc" id="region-desc">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formulas -->
+  <section style="margin-top:20px; padding-bottom:0">
+    <div class="section-label">Equações do Modelo</div>
+    <div class="formulas-card">
+      <div class="formula-row">
+        <span class="formula-name">IB</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-expr">(VBB − VBE) / RB</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">IC</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-expr">β × IB</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">VCE</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-expr">VCC − IC × RC</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name">PT</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-expr">VCE × IC</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-name" style="color:var(--muted)">VBE</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-expr" style="color:var(--muted)">0.7 V (silício)</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const VBE = 0.7;
+
+  // Sync beta slider
+  const betaInput = document.getElementById('beta');
+  const betaSlider = document.getElementById('beta-slider');
+  const betaDisplay = document.getElementById('beta-display');
+
+  betaSlider.addEventListener('input', () => {
+    betaInput.value = betaSlider.value;
+    betaDisplay.textContent = betaSlider.value;
+  });
+
+  betaInput.addEventListener('input', () => {
+    const v = Math.min(500, Math.max(10, parseFloat(betaInput.value) || 100));
+    betaSlider.value = v;
+    betaDisplay.textContent = v;
+  });
+
+  function formatVal(val) {
+    if (Math.abs(val) >= 1000) return (val / 1000).toFixed(3);
+    if (Math.abs(val) >= 1) return val.toFixed(3);
+    if (Math.abs(val) >= 0.001) return (val * 1000).toFixed(2);
+    return (val * 1e6).toFixed(2);
+  }
+
+  function smartFormat(val_A) {
+    // Returns {value, unit} for current in Amperes
+    const abs = Math.abs(val_A);
+    if (abs >= 1) return { v: val_A.toFixed(4), u: 'A' };
+    if (abs >= 1e-3) return { v: (val_A * 1e3).toFixed(3), u: 'mA' };
+    if (abs >= 1e-6) return { v: (val_A * 1e6).toFixed(2), u: 'μA' };
+    return { v: (val_A * 1e9).toFixed(2), u: 'nA' };
+  }
+
+  function smartFormatPower(val_W) {
+    const abs = Math.abs(val_W);
+    if (abs >= 1) return { v: val_W.toFixed(4), u: 'W' };
+    if (abs >= 1e-3) return { v: (val_W * 1e3).toFixed(3), u: 'mW' };
+    return { v: (val_W * 1e6).toFixed(2), u: 'μW' };
+  }
+
+  function animateCard(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    void el.offsetWidth;
+    el.classList.add('active');
+  }
+
+  function calculate() {
+    const errEl = document.getElementById('error-msg');
+    errEl.style.display = 'none';
+
+    const VBB = parseFloat(document.getElementById('vbb').value);
+    const VCC = parseFloat(document.getElementById('vcc').value);
+    const B   = parseFloat(document.getElementById('beta').value);
+    const RB  = parseFloat(document.getElementById('rb').value) * 1e3;  // kΩ → Ω
+    const RC  = parseFloat(document.getElementById('rc').value) * 1e3;  // kΩ → Ω
+
+    if (isNaN(VBB)||isNaN(VCC)||isNaN(B)||isNaN(RB)||isNaN(RC)||RB<=0||RC<=0||B<=0) {
+      errEl.textContent = '⚠ Preencha todos os campos com valores válidos (RB, RC, β > 0).';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (VBB <= VBE) {
+      errEl.textContent = `⚠ VBB (${VBB}V) deve ser maior que VBE (0.7V) para polarizar a junção.`;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // Calculos
+    const IB = (VBB - VBE) / RB;          // Amperes
+    const IC_ideal = B * IB;               // Amperes
+    const VCE_ideal = VCC - IC_ideal * RC;
+    
+    // Saturação: VCE mín ≈ 0.2V
+    const VCE_SAT = 0.2;
+    const IC_sat = (VCC - VCE_SAT) / RC;
+
+    let region, regionClass, regionDesc;
+    let IC, VCE;
+
+    if (IB <= 0) {
+      IC = 0; VCE = VCC;
+      region = 'Corte (Cutoff)';
+      regionClass = 'cutoff';
+      regionDesc = 'Transistor bloqueado — IB ≤ 0';
+    } else if (VCE_ideal <= VCE_SAT) {
+      IC = IC_sat;
+      VCE = VCE_SAT;
+      region = 'Saturação';
+      regionClass = 'saturation';
+      regionDesc = 'VCE ≈ 0.2V — transistor em plena condução';
+    } else {
+      IC = IC_ideal;
+      VCE = VCE_ideal;
+      region = 'Região Ativa';
+      regionClass = 'active';
+      regionDesc = 'Modo amplificador — IC = β × IB';
+    }
+
+    const PT = VCE * IC;  // Watts
+
+    // Display
+    const ibF = smartFormat(IB);
+    const icF = smartFormat(IC);
+    const ptF = smartFormatPower(PT);
+
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+    async function showResults() {
+      await delay(50);
+      document.getElementById('val-ib').textContent = ibF.v;
+      document.getElementById('unit-ib').textContent = ibF.u;
+      animateCard('card-ib');
+
+      await delay(80);
+      document.getElementById('val-ic').textContent = icF.v;
+      document.getElementById('unit-ic').textContent = icF.u;
+      animateCard('card-ic');
+
+      await delay(80);
+      document.getElementById('val-vce').textContent = VCE.toFixed(3);
+      animateCard('card-vce');
+
+      await delay(80);
+      document.getElementById('val-pt').textContent = ptF.v;
+      document.getElementById('unit-pt').textContent = ptF.u;
+      animateCard('card-pt');
+
+      await delay(80);
+      const rc = document.getElementById('region-card');
+      const dot = document.getElementById('region-dot');
+      dot.className = `region-dot ${regionClass}`;
+      document.getElementById('region-text').textContent = region;
+      document.getElementById('region-desc').textContent = regionDesc;
+      rc.classList.remove('active');
+      void rc.offsetWidth;
+      rc.classList.add('active');
+    }
+
+    showResults();
+  }
+
+  // Allow Enter key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calculate();
+  });
+</script>
+</body>
+</html>
