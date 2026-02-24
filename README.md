@@ -1,73 +1,31 @@
-# BJT Simulator NPN — React Native (Expo)
+# BJT Simulator NPN
 
-App mobile para simulação de circuitos com transistor NPN.
-
----
-
-## 📱 Como gerar o APK
-
-### Pré-requisitos
-- [Node.js](https://nodejs.org/) v18 ou superior
-- Conta gratuita em [expo.dev](https://expo.dev) (para build na nuvem)
+Simulador web interativo de circuitos com transistor NPN.
 
 ---
 
-## 🚀 Opção 1 — Build na Nuvem com EAS (RECOMENDADO)
+## 🚀 Como Usar
 
-> Não precisa instalar Android Studio. O APK é compilado nos servidores da Expo.
+### Requisitos
+- Um navegador web moderno (Chrome, Firefox, Edge, Safari)
 
-### Passo a passo:
+### Instruções
 
-```bash
-# 1. Instale as dependências
-npm install
+1. Abra o arquivo `bjt-simulator.html` no seu navegador
+2. Ajuste os valores de entrada (VBB, VCC, RB, RC, β)
+3. Veja os resultados calculados em tempo real
 
-# 2. Instale o CLI do Expo e EAS globalmente
-npm install -g expo-cli eas-cli
-
-# 3. Faça login na sua conta Expo
-eas login
-
-# 4. Configure o projeto (só na primeira vez)
-eas build:configure
-
-# 5. Gere o APK (perfil "preview" = .apk direto)
-eas build --platform android --profile preview
-```
-
-Após ~5 minutos, você receberá um **link para baixar o .apk** direto no celular!
-
----
-
-## 🔧 Opção 2 — Testar localmente com Expo Go
-
-> Teste instantâneo no celular sem gerar APK.
-
-```bash
-# 1. Instale as dependências
-npm install
-
-# 2. Inicie o servidor de desenvolvimento
-npx expo start
-
-# 3. Escaneie o QR code com o app "Expo Go" (Android/iOS)
-```
-
-Baixe o **Expo Go** na Play Store:  
-👉 https://play.google.com/store/apps/details?id=host.exp.exponent
+Não é necessário instalar nada — funciona completamente offline!
 
 ---
 
 ## 📦 Estrutura do Projeto
 
 ```
-bjt-simulator/
-├── App.js          # App principal (toda a lógica e UI)
-├── app.json        # Configurações do Expo
-├── eas.json        # Configurações de build
-├── package.json    # Dependências
-└── assets/
-    └── icon.png    # Ícone do app (crie uma imagem 1024x1024)
+BJT-Simulator/
+├── bjt-simulator.html  # Aplicação completa
+├── README.md           # Este arquivo
+└── ...
 ```
 
 ---
